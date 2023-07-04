@@ -1,0 +1,19 @@
+{
+  "name": "langchain-ts",
+  "version": "1.0.0",
+  "dependencies": {
+    "@pinecone-database/pinecone": "^0.1.6",
+    "cheerio": "^1.0.0-rc.12",
+    "dotenv": "^16.0.3",
+    "langchain": "^0.0.78",
+    "puppeteer": "^19.11.1",
+    "sitemapper": "^3.2.6",
+    "ts-node": "^10.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.2.1",
+    "eslint": "^8.41.0",
+    "typescript": "^5.0.4"
+  },
+  "type": "module"
+}

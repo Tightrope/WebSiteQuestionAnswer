@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "module": "NodeNext",
+    "outDir": "dist",
+    "sourceMap": true,
+    "target": "ES2020"
+  },
+  "exclude": [
+    "node_modules",
+    ".env",
+  ]
+}
