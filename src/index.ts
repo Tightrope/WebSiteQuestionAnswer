@@ -46,24 +46,24 @@ async function main(){
 
     console.log(`Number of sitemap entries after filtering out blog posts: ${sitemapperEntries.sites.length}`);
 
-    sitemapperEntries.sites.forEach((site) => {
-        console.log(site);
-    });
+    // sitemapperEntries.sites.forEach((site) => {
+    //     console.log(site);
+    // });
 
-    // DEBUG DEBUG DEBUG
-    // TODO remove this
     // sitemapperEntries.sites = sitemapperEntries.sites.slice(0, 3);
 
-    for (const site of sitemapperEntries.sites) {
+    // Flat map sitemap entries using the file path in the file name
+    for( const site of sitemapperEntries.sites) {
         const siteURL = new URL(site);
-        console.log(`Fetching ${siteURL.toString()}`);
-        const webPaths = siteURL.pathname.split("/");
-        fs.mkdirSync(Path.join(dataDirPath, ...webPaths), {recursive: true, mode: 0o755});
+        let webPaths = siteURL.pathname.split("/");
+        webPaths = webPaths.filter((path) => { return path !== ""; });
+        if(webPaths.length === 0) { webPaths.push("index"); }
+        const fileName = webPaths.join(".") + ".txt";
+        const filePath = Path.join(dataDirPath, fileName);
         const webContent = await fetchWebContentPuppeteer(siteURL);
-        const filePath = Path.join(dataDirPath, ...webPaths, "index.txt");
         fs.writeFileSync(filePath.toString(), webContent, {flag: "w+"} );
+        console.log(filePath);
     }
-
 
     // let pineconeStore = await PineconeStore.fromTexts(contentFiles, {}, openAIEmbeddings, {
     //     pineconeIndex: pineconeClient.Index("beato") });
