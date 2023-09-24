@@ -11,6 +11,8 @@ import {OpenAI} from "langchain";
 import {RetrievalQAChain} from "langchain/chains";
 import {Document} from "langchain/document";
 import {PineconeRepository} from "./respository/PineconeRepository.js";
+import {ClientRequest} from "http";
+import axios from "axios";
 
 dotenv.config()
 
@@ -33,39 +35,13 @@ async function main(){
     const pineconeRepo = new PineconeRepository(pineconeClient, indexName, openAIEmbeddings);
     await pineconeRepo.createIndexIfNotExists();
 
-    // Is there a sitemap for the site?
-    // const sitemapURL = new URL("sitemap.xml", process.env.TARGET_URL);
-    // if(sitemapURL){
-    //     console.log(`Sitemap URL: ${sitemapURL.toString()}`);
-    // } else {
-    //     console.log(`No sitemap found for ${process.env.TARGET_URL}`);
-    //     return;
-    // }
+    const sitemapEntries = await fetchSitemapEntries(targetUrl);
 
     // Make the root data directory if it doesn't exist
     // const dataDirPath = Path.join(process.cwd(), "data", sitemapURL.hostname);
     // fs.mkdirSync(dataDirPath, {recursive: true, mode: 0o755});
     //
     // // Get sitemap URLs
-    // const sitemapper = new Sitemapper.default({
-    //     url: sitemapURL.toString(),
-    //     timeout: 100000,
-    //     concurrency: 5
-    // });
-    //
-    // let sitemapperEntries = await sitemapper.fetch();
-    // console.log(`Number of sitemap entries: ${sitemapperEntries.sites.length}`);
-    //
-    // // filter out non-data bearing entries
-    // sitemapperEntries.sites = sitemapperEntries.sites.filter((site) => {
-    //     return !site.includes("blog");
-    // });
-    //
-    // sitemapperEntries.sites = sitemapperEntries.sites.filter((site) => {
-    //     return !site.includes("sitemap");
-    // });
-    //
-    // console.log(`Number of sitemap entries after filtering: ${sitemapperEntries.sites.length}`);
     //
     // // DEBUG DEBUG DEBUG
     // // DWC
@@ -178,6 +154,48 @@ function urlToIndexName(webUrl: URL): string {
 
     let indexNameSplit = indexName.split(".");
     return indexNameSplit.slice(0, indexNameSplit.length - 1).join();
+}
+
+async function sitemapExists(targetUrl: URL): Promise<boolean> {
+    const sitemapURL = new URL("sitemap.xml", targetUrl);
+    const response = await axios.get(sitemapURL.toString());
+
+    return response.status === 200;
+}
+
+async function fetchSitemapEntries(targetUrl: URL): Promise<string[]> {
+    if(!await sitemapExists(targetUrl)) {
+        throw new Error(`No sitemap found for ${targetUrl.hostname}`);
+    }
+
+    const sitemapURL = new URL("sitemap.xml", targetUrl);
+
+    const sitemapper = new Sitemapper.default({
+        url: sitemapURL.toString(),
+        timeout: 100000,
+        concurrency: 5
+    });
+
+    let sitemapperEntries = await sitemapper.fetch();
+    console.info(`Number of sitemap entries: ${sitemapperEntries.sites.length}`);
+
+    // filter out non-data bearing entries
+    sitemapperEntries.sites = sitemapperEntries.sites.filter((site) => {
+        return !site.includes("blog");
+    });
+
+    sitemapperEntries.sites = sitemapperEntries.sites.filter((site) => {
+        return !site.includes("sitemap");
+    });
+
+    console.info(`Number of sitemap entries after filtering: ${sitemapperEntries.sites.length}`);
+
+    if(sitemapperEntries.errors.length) {
+        console.error(`Sitemap errors: ${JSON.stringify(sitemapperEntries.errors)}`);
+        throw new Error(`Sitemap errors: ${JSON.stringify(sitemapperEntries.errors)}`);
+    }
+
+    return sitemapperEntries.sites;
 }
 
 main().then(() => {
